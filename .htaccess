@@ -1,0 +1,15 @@
+SetEnvIf Origin ^(https?://(?:.+\.)?tutorialpaths\.com(?::\d{1,5})?)$   CORS_ALLOW_ORIGIN=$1
+SetEnvIf Origin ^(http://localhost:8080)$   CORS_ALLOW_ORIGIN=$1
+Header append Access-Control-Allow-Origin  %{CORS_ALLOW_ORIGIN}e   env=CORS_ALLOW_ORIGIN
+Header merge  Vary "Origin"
+
+RewriteEngine On
+RewriteCond %{ENV:HTTPS} !on [OR]
+RewriteCond %{HTTP_HOST} !^gateway.tutorialpaths.com$ [NC]
+RewriteRule ^(.*)$ https://gateway.tutorialpaths.com/$1 [L,R=301]
+
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/dynodelc/gateway.tutorialpaths.com"
+PassengerBaseURI "/"
+PassengerPython "/home/dynodelc/virtualenv/gateway.tutorialpaths.com/3.6/bin/python3.6"
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
