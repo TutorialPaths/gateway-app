@@ -346,135 +346,134 @@ def v1loadertutorialid(id):
 @app.route('/v1/editor/tutorial/create', methods=["POST"])
 def v1editortutorialcreate():
     tutorial = request.get_json(force=True)
-	
-	randomid = ''
-	while randomid == '':
-		randomid = 'tr:' + ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') for n in range(20)])
-		res = localsql.fetchone("SELECT * FROM tutorials WHERE `tr:id` = %s", randomid)
-		if res['success']:
-			if res['results']:
-				randomid = ''
-		else:
-			return '{"code": "DB/gen", "description": "database-transaction-error"}'
 
-	res = localsql.execute("INSERT INTO tutorials (`tr:id`, `t:id`, author, title, description, upvotes, downvotes, image, published) VALUES (%s, %s, %s, %s, %s, 0, 0, %s, '0')", True, False, randomid, tutorial["title"].lower().replace(" ", "-"), tutorial["author"], tutorial["title"], tutorial["description"], tutorial["image"])
-	if res['success']:
-		return '{"success": true}'
-	else:
-		return '{"success": false}'
+    randomid = ''
+    while randomid == '':
+        randomid = 'tr:' + ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') for n in range(20)])
+        res = localsql.fetchone("SELECT * FROM tutorials WHERE `tr:id` = %s", randomid)
+        if res['success']:
+            if res['results']:
+                randomid = ''
+        else:
+            return '{"code": "DB/gen", "description": "database-transaction-error"}'
+
+    res = localsql.execute("INSERT INTO tutorials (`tr:id`, `t:id`, author, title, description, upvotes, downvotes, image, published) VALUES (%s, %s, %s, %s, %s, 0, 0, %s, '0')", True, False, randomid, tutorial["title"].lower().replace(" ", "-"), tutorial["author"], tutorial["title"], tutorial["description"], tutorial["image"])
+    if res['success']:
+        return '{"success": true}'
+    else:
+        return '{"success": false}'
 
 
 @app.route("/v1/editor/tutorial/update", methods=["POST"])
 def v1editortutorialupdate():
-	tutorial = request.get_json(force=True)
-	failures = '['
+    tutorial = request.get_json(force=True)
+    failures = '['
 
-	res = localsql.fetchone("SELECT * FROM tutorials WHERE `tr:id` = %s AND author = %s", tutorial["tr:id"], tutorial["author"])
-	if not res['success']:
-		return '{"code": "DB/gen", "description": "database-transaction-error"}'
-	if not res['results']:
-		return '{"code": "E/T/U/01", "description": "user-not-verified"}'
+    res = localsql.fetchone("SELECT * FROM tutorials WHERE `tr:id` = %s AND author = %s", tutorial["tr:id"], tutorial["author"])
+    if not res['success']:
+        return '{"code": "DB/gen", "description": "database-transaction-error"}'
+    if not res['results']:
+        return '{"code": "E/T/U/01", "description": "user-not-verified"}'
 
-	res = localsql.fetchone("SELECT * FROM sessions WHERE `sr:id` = %s", tutorial["sr:id"])
-	if not res['success']:
-		return '{"code": "DB/gen", "description": "database-transaction-error"}'
-	if not res['results']:
-		return '{"code": "E/T/U/01", "description": "user-not-verified"}'
-	if not res['results'][0] == tutorial["author"]:
-		return '{"code": "E/T/U/01", "description": "user-not-verified"}'
+    res = localsql.fetchone("SELECT * FROM sessions WHERE `sr:id` = %s", tutorial["sr:id"])
+    if not res['success']:
+        return '{"code": "DB/gen", "description": "database-transaction-error"}'
+    if not res['results']:
+        return '{"code": "E/T/U/01", "description": "user-not-verified"}'
+    if not res['results'][0] == tutorial["author"]:
+        return '{"code": "E/T/U/01", "description": "user-not-verified"}'
 
-	res = localsql.execute("UPDATE tutorials SET title = %s AND description = %s AND image = %s AND published = %s WHERE `tr:id` = %s", True, False, tutorial["title"], tutorial["description"], tutorial["image"], tutorial["published"], tutorial["tr:id"])
-	if not res['success']:
-		if not failures == '[':
-			failures += ', '
-		failures += '{"action": "update_tutorial"}'
+    res = localsql.execute("UPDATE tutorials SET title = %s AND description = %s AND image = %s AND published = %s WHERE `tr:id` = %s", True, False, tutorial["title"], tutorial["description"], tutorial["image"], tutorial["published"], tutorial["tr:id"])
+    if not res['success']:
+        if not failures == '[':
+            failures += ', '
+        failures += '{"action": "update_tutorial"}'
 
-	for step in tutorial["modify_steps"]:
-		res = localsql.execute("UPDATE tutorials_steps SET title = %s AND content = %s AND type = %s WHERE `sr:id` = %s", True, False, step["title"], step["content"], step["type"], step["sr:id"])
-		if not res['success']:
-			if not failures == '[':
-				failures += ', '
-			failures += '{"action": "mofidy_step", "specific": "' + step["sr:id"] + '"}'
+    for step in tutorial["modify_steps"]:
+        res = localsql.execute("UPDATE tutorials_steps SET title = %s AND content = %s AND type = %s WHERE `sr:id` = %s", True, False, step["title"], step["content"], step["type"], step["sr:id"])
+        if not res['success']:
+            if not failures == '[':
+                failures += ', '
+            failures += '{"action": "mofidy_step", "specific": "' + step["sr:id"] + '"}'
 
-	for step in tutorial["create_steps"]:
-		randomid = ''
-		success = True
-		while randomid == '' and success:
-			randomid = 'sr:' + ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') for n in range(20)])
-			res = localsql.fetchone("SELECT * FROM tutorials_steps WHERE `sr:id` = %s", randomid)
-			if res['success']:
-				if res['results']:
-					randomid = ''
-			else:
-				if not failures == '[':
-					failures += ', '
-				failures += '{"action": "create_step", "specific": "' + step["cr:id"] + '"}'
-				success = False
+    for step in tutorial["create_steps"]:
+        randomid = ''
+        success = True
+        while randomid == '' and success:
+            randomid = 'sr:' + ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') for n in range(20)])
+            res = localsql.fetchone("SELECT * FROM tutorials_steps WHERE `sr:id` = %s", randomid)
+            if res['success']:
+                if res['results']:
+                    randomid = ''
+            else:
+                if not failures == '[':
+                    failures += ', '
+                failures += '{"action": "create_step", "specific": "' + step["cr:id"] + '"}'
+                success = False
 
-		if success:
-			res = localsql.execute("INSERT INTO tutorials_steps (`tr:id`, `sr:id`, `s:id`, author, title, content, type) VALUES (%s, %s, %s, %s, %s, %s, %s)", True, False, tutorial["tr:id"], randomid, step["title"].lower().replace(" ", "-"), tutorial["author"], step["title"], step["content"], step["type"])
-			if not res['success']:
-				if not failures == '[':
-					failures += ', '
-				failures += '{"action": "create_step", "specific": "' + step["cr:id"] + '"}'
+        if success:
+            res = localsql.execute("INSERT INTO tutorials_steps (`tr:id`, `sr:id`, `s:id`, author, title, content, type) VALUES (%s, %s, %s, %s, %s, %s, %s)", True, False, tutorial["tr:id"], randomid, step["title"].lower().replace(" ", "-"), tutorial["author"], step["title"], step["content"], step["type"])
+            if not res['success']:
+                if not failures == '[':
+                    failures += ', '
+                failures += '{"action": "create_step", "specific": "' + step["cr:id"] + '"}'
 
-	for step in tutorial["remove_steps"]:
-		res = localsql.execute("DELETE FROM tutorials_steps WHERE `sr:id` = %s", True, False, step)
-		if not res['success']:
-			if not failures == '[':
-				failures += ', '
-			failures += '{"action": "delete_step", "specific": "' + step["sr:id"] + '"}'
+    for step in tutorial["remove_steps"]:
+        res = localsql.execute("DELETE FROM tutorials_steps WHERE `sr:id` = %s", True, False, step)
+        if not res['success']:
+            if not failures == '[':
+                failures += ', '
+            failures += '{"action": "delete_step", "specific": "' + step["sr:id"] + '"}'
 
-	for branch in tutorial["modify_branches"]:
-		res = localsql.execute("UPDATE tutorials_branches SET type = %s AND title = %s AND content = %s AND author = %s AND `pull_sr:id` = %s AND `push_tr:id` = %s AND `push_sr:id` = %s AND `throw_sr:id` = %s WHERE `br:id` = %s", True, False, branch["type"], branch["title"], branch["content"], tutorial["author"], branch["pull_sr:id"], branch["push_tr:id"], branch["push_sr:id"], branch["throw_sr:id"], branch["br:id"])
-		if not res['success']:
-			if not failures == '[':
-				failures += ', '
-			failures += '{"action": "modify_branch", "specific": "' + branch["br:id"] + '"}'
+    for branch in tutorial["modify_branches"]:
+        res = localsql.execute("UPDATE tutorials_branches SET type = %s AND title = %s AND content = %s AND author = %s AND `pull_sr:id` = %s AND `push_tr:id` = %s AND `push_sr:id` = %s AND `throw_sr:id` = %s WHERE `br:id` = %s", True, False, branch["type"], branch["title"], branch["content"], tutorial["author"], branch["pull_sr:id"], branch["push_tr:id"], branch["push_sr:id"], branch["throw_sr:id"], branch["br:id"])
+        if not res['success']:
+            if not failures == '[':
+                failures += ', '
+            failures += '{"action": "modify_branch", "specific": "' + branch["br:id"] + '"}'
 
-	for branch in tutorial["create_branches"]:
-		randomid = ''
-		success = True
-		while randomid == '' and success:
-			randomid = 'br:' + ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') for n in range(20)])
-			res = localsql.fetchone("SELECT * FROM tutorials_branches WHERE `br:id` = %s", randomid)
-			if res['success']:
-				if res['results']:
-					randomid = ''
-			else:
-				if not failures == '[':
-					failures += ', '
-				failures += '{"action": "create_branch", "specific": "' + branch["cr:id"] + '"}'
-				success = False
+    for branch in tutorial["create_branches"]:
+        randomid = ''
+        success = True
+        while randomid == '' and success:
+            randomid = 'br:' + ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') for n in range(20)])
+            res = localsql.fetchone("SELECT * FROM tutorials_branches WHERE `br:id` = %s", randomid)
+            if res['success']:
+                if res['results']:
+                    randomid = ''
+            else:
+                if not failures == '[':
+                    failures += ', '
+                failures += '{"action": "create_branch", "specific": "' + branch["cr:id"] + '"}'
+                success = False
 
-		if success:
-			res = localsql.execute("INSERT INTO tutorials_branches (`tr:id`, `br:id`, type, title, content, author, `pull_sr:id`, `push_tr:id`, `push_sr:id`, `throw_sr:id`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", True, False, tutorial["tr:id"], randomid, branch["type"], branch["title"], branch["content"], tutorial["author"], branch["pull_sr:id"], branch["push_tr:id"], branch["push_sr:id"], branch["throw_sr:id"])
-			if not res['success']:
-				if not failures == '[':
-					failures += ', '
-				failures += '{"action": "create_branch", "specific": "' + branch["cr:id"] + '"}'
+        if success:
+            res = localsql.execute("INSERT INTO tutorials_branches (`tr:id`, `br:id`, type, title, content, author, `pull_sr:id`, `push_tr:id`, `push_sr:id`, `throw_sr:id`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", True, False, tutorial["tr:id"], randomid, branch["type"], branch["title"], branch["content"], tutorial["author"], branch["pull_sr:id"], branch["push_tr:id"], branch["push_sr:id"], branch["throw_sr:id"])
+            if not res['success']:
+                if not failures == '[':
+                    failures += ', '
+                failures += '{"action": "create_branch", "specific": "' + branch["cr:id"] + '"}'
 
+    for branch in tutorial["remove_branches"]:
+        res = localsql.execute("DELETE FROM tutorials_branches WHERE `br:id` = %s", True, False, branch)
+        if not res['success']:
+            if not failures == '[':
+                failures += ', '
+            failures += '{"action": "remove_branch", "specific": "' + branch["br:id"] + '"}'
 
-	for branch in tutorial["remove_branches"]:
-		res = localsql.execute("DELETE FROM tutorials_branches WHERE `br:id` = %s", True, False, branch)
-		if not res['success']:
-			if not failures == '[':
-				failures += ', '
-			failures += '{"action": "remove_branch", "specific": "' + branch["br:id"] + '"}'
+    for tag in tutorial["create_tags"]:
+        res = localsql.execute("INSERT INTO tags_tutorials (`ta:id`, `tr:id`) VALUES (%s, %s)", True, False, tag, tutorial["tr:id"])
+        if not res['success']:
+            if not failures == '[':
+                failures += ', '
+            failures += '{"action": "create_tag", "specific": "' + tag + '"}'
 
-	for tag in tutorial["create_tags"]:
-		res = localsql.execute("INSERT INTO tags_tutorials (`ta:id`, `tr:id`) VALUES (%s, %s)", True, False, tag, tutorial["tr:id"])
-		if not res['success']:
-			if not failures == '[':
-				failures += ', '
-			failures += '{"action": "create_tag", "specific": "' + tag + '"}'
+    for tag in tutorial["remove_tags"]:
+        res = localsql.execute("DELETE FROM tags_tutorials WHERE `tr:id` = %s AND `ta:id` = %s", True, False, tutorial["tr:id"], tag)
+        if not res['success']:
+            if not failures == '[':
+                failures += ', '
+            failures += '{"action": "create_tag", "specific": "' + tag + '"}'
 
-	for tag in tutorial["remove_tags"]:
-		res = localsql.execute("DELETE FROM tags_tutorials WHERE `tr:id` = %s AND `ta:id` = %s", True, False, tutorial["tr:id"], tag)
-		if not res['success']:
-			if not failures == '[':
-				failures += ', '
-			failures += '{"action": "create_tag", "specific": "' + tag + '"}'
-
-	failures += ']'
-	return '{"success": true, "failures": ' + failures + '}'
+    failures += ']'
+    return '{"success": true, "failures": ' + failures + '}'
